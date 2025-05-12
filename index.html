@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sistem Pakar Lonjakan Biaya Listrik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-box {
+            cursor: pointer;
+            border: 2px solid #e5e7eb;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 0.375rem;
+            transition: all 0.3s;
+        }
+        .option-box.selected {
+            border-color: #14b8a6;
+            background-color: #d3fef4;
+            color: black;
+        }
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        .half-circle {
+            width: 150px;
+            height: 75px;
+            background: #14b8a6;
+            border-radius: 0 0 75px 75px;
+            position: relative;
+            overflow: hidden;
+            transform-origin: center top;
+        }
+        .half-circle .progress {
+            width: 100%;
+            height: 100%;
+            background: #f0fdfa;
+            position: absolute;
+            bottom: 0;
+            border-radius: 0 0 75px 75px;
+            transition: height 0.3s;
+        }
+        .half-circle .text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 p-6 text-[#f0fdfa] max-h-screen">
+    <!-- Halaman Awal -->
+    <section id="start-screen" class="flex justify-center items-center flex-col h-screen">
+        <h2 class="text-2xl font-bold mb-6 text-center">Diagnosa Lonjakan Biaya Konsumsi Listrik</h2>
+        <p class="text-center mb-6">Klik "Start" untuk memulai diagnosa.</p>
+        <button id="start-button" class="bg-teal-600 text-white px-6 py-3 rounded hover:bg-teal-700" onclick="startQuiz()">Start</button>
+    </section>
+
+    <!-- Section Pertanyaan -->
+    <section id="questions-section" class="hidden flex justify-center items-center flex-col h-screen">
+        <div class="md:max-w-2xl md:w-[600px] sm:max-w-xl mx-auto md:space-y-6 sm:space-y-4">
+            <!-- Indikator Progres -->
+            <div class="text-center mb-6">
+                <p id="progress-text" class="font-medium">Question 1/8</p>
+                <div class="mx-auto mt-2">
+                    <div class="h-2 bg-gray-200 rounded-full md:max-w-2xl md:w-[600px] sm:max-w-xl">
+                        <div class="h-2 rounded-full bg-teal-600" id="progress-bar" style="width: 12.5%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Icon -->
+            <div class="flex justify-center mb-6">
+                <div class="w-[300px] h-auto">
+                    <img src="https://uploads.convertflow.co/production/websites/417/t5s1WjGlTKmkyWv3JZ6F_icon-quiz.png" alt="Icon Quiz" class="w-full h-full object-contain">
+                </div>
+            </div>
+
+            <!-- Pertanyaan -->
+            <div id="questions-container text-center">
+                <div class="question flex flex-col" data-index="1">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-konsumsi" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-konsumsi" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-konsumsi">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Konsumsi Listrik per Bulan:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="Rendah" onclick="selectOption(this)">Rendah (<500 kWh)</div>
+                        <div class="option-box" data-value="Sedang" onclick="selectOption(this)">Sedang (500-1.000 kWh)</div>
+                        <div class="option-box" data-value="Tinggi" onclick="selectOption(this)">Tinggi (>1.000 kWh)</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-konsumsi">Silakan pilih salah satu opsi</p>
+                </div>
+
+                <div class="question flex flex-col hidden" data-index="2">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-perangkat" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-perangkat" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-perangkat">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Jumlah Perangkat Aktif Bersamaan:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="Sedikit" onclick="selectOption(this)">Sedikit (1-2 perangkat besar)</div>
+                        <div class="option-box" data-value="Sedang" onclick="selectOption(this)">Sedang (3-5 perangkat besar)</div>
+                        <div class="option-box" data-value="Banyak" onclick="selectOption(this)">Banyak (>5 perangkat besar)</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-perangkat">Silakan pilih salah satu opsi</p>
+                </div>
+
+                <div class="question flex flex-col hidden" data-index="3">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-pola" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-pola" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-pola">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Pola Penggunaan Listrik:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="Hemat" onclick="selectOption(this)">Hemat (hanya pakai seperlunya)</div>
+                        <div class="option-box" data-value="Normal" onclick="selectOption(this)">Normal (pemakaian rata-rata)</div>
+                        <div class="option-box" data-value="Boros" onclick="selectOption(this)">Boros (sering nyalakan AC/1V, banyak peralatan menyala)</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-pola">Silakan pilih salah satu opsi</p>
+                </div>
+
+                <div class="question flex flex-col hidden" data-index="4">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-daya" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-daya" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-daya">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Daya Listrik Terpasang:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="900 VA" onclick="selectOption(this)">900 VA</div>
+                        <div class="option-box" data-value="1.300 VA" onclick="selectOption(this)">1.300 VA</div>
+                        <div class="option-box" data-value="2.200 VA atau lebih" onclick="selectOption(this)">2.200 VA atau lebih</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-daya">Silakan pilih salah satu opsi</p>
+                </div>
+
+                <div class="question flex flex-col hidden" data-index="5">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-beban" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-beban" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-beban">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Kemampuan Daya Terhadap Beban:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="Sesuai" onclick="selectOption(this)">Sesuai</div>
+                        <div class="option-box" data-value="Hampir penuh" onclick="selectOption(this)">Hampir penuh</div>
+                        <div class="option-box" data-value="Overload" onclick="selectOption(this)">Overload</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-beban">Silakan pilih salah satu opsi</p>
+                </div>
+
+                <div class="question flex flex-col hidden" data-index="6">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-kenaikan" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-kenaikan" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-kenaikan">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Kenaikan Tagihan Dibandingkan Bulan Lalu:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="Normal" onclick="selectOption(this)">Normal (<10%)</div>
+                        <div class="option-box" data-value="Waspada" onclick="selectOption(this)">Waspada (10-30%)</div>
+                        <div class="option-box" data-value="Tinggi" onclick="selectOption(this)">Tinggi (>30%)</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-kenaikan">Silakan pilih salah satu opsi</p>
+                </div>
+
+                <div class="question flex flex-col hidden" data-index="7">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-besarTagihan" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-besarTagihan" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-besarTagihan">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Besar Tagihan Listrik:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="Rendah" onclick="selectOption(this)">Rendah (Rp 500 ribu)</div>
+                        <div class="option-box" data-value="Sedang" onclick="selectOption(this)">Sedang (Rp 500 ribu - Rp 1.5 juta)</div>
+                        <div class="option-box" data-value="Tinggi" onclick="selectOption(this)">Tinggi (>Rp 1.5 juta)</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-besarTagihan">Silakan pilih salah satu opsi</p>
+                </div>
+
+                <div class="question flex flex-col hidden" data-index="8">
+                    <label class="font-medium mb-4">CF (0.1-1.0):</label>
+                    <div class="flex w-64 mx-auto items-center justify-center mb-6">
+                        <div class="py-1 relative min-w-full">
+                            <div class="h-2 bg-gray-200 rounded-full">
+                                <div class="absolute h-2 rounded-full bg-teal-600 w-0 cf-bar" id="cf-bar-faktor" style="width: 80%"></div>
+                                <div class="absolute h-4 flex items-center justify-center w-4 rounded-full bg-white shadow border border-gray-300 -ml-2 top-0 cursor-pointer cf-thumb" id="cf-thumb-faktor" style="left: 80%">
+                                    <div class="relative -mt-2 w-1">
+                                        <div class="absolute z-40 opacity-100 bottom-100 mb-2 left-0 min-w-full" style="margin-left: -20.5px">
+                                            <div class="relative shadow-md">
+                                                <div class="bg-black -mt-8 text-white truncate text-xs rounded py-1 px-4 cf-value" id="cf-value-faktor">0.8</div>
+                                                <svg class="absolute text-black w-full h-2 left-0 top-100" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve">
+                                                    <polygon class="fill-current" points="0,0 127.5,127.5 255,0"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="absolute -ml-1 bottom-0 left-0 -mb-6">0.1</div>
+                                <div class="absolute -mr-1 bottom-0 right-0 -mb-6">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="font-medium mb-4 mt-6">Faktor Penyebab Kenaikan:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="option-box" data-value="Penggunaan Berlebih" onclick="selectOption(this)">Penggunaan Berlebih</div>
+                        <div class="option-box" data-value="Tarif Naik" onclick="selectOption(this)">Tarif Naik</div>
+                        <div class="option-box" data-value="Kerusakan Perangkat" onclick="selectOption(this)">Kerusakan Perangkat</div>
+                    </div>
+                    <p class="error-message mt-4" id="error-faktor">Silakan pilih salah satu opsi</p>
+                </div>
+            </div>
+
+            <!-- Tombol Navigasi -->
+            <div class="flex justify-center space-x-4">
+                <button id="prev-button" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 hidden">Previous</button>
+                <button id="next-button" class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Next</button>
+                <button id="diagnosa-button" class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 hidden" onclick="openModal()">Diagnosa</button>
+            </div>
+
+            <!-- Modal untuk Output Gauge -->
+            <div id="modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-center z-50">
+                <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full relative">
+                    <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-3xl" onclick="closeModal()">×</button>
+                    <div class="card bg-white rounded-lg shadow-md p-4 w-full flex justify-center items-center">
+                        <div class="relative size-32">
+                            <svg class="size-full rotate-180" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="18" cy="18" r="16" fill="none" class="stroke-current text-gray-200 dark:text-neutral-700" stroke-width="1" stroke-dasharray="50 100" stroke-linecap="round"></circle>
+                                <circle cx="18" cy="18" r="16" fill="none" class="stroke-current text-teal-600 dark:text-teal-500" stroke-width="1.5" stroke-dasharray="0 100" stroke-linecap="round" id="gauge-progress"></circle>
+                            </svg>
+                            <div class="absolute top-9 start-1/2 transform -translate-x-1/2 text-center">
+                                <span class="text-3xl font-bold text-teal-600 dark:text-teal-500" id="gauge-value">0</span>
+                                <span class="text-sm text-teal-600 dark:text-teal-500 block" id="gauge-label">Score</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="question.js"></script>
+    <script src="rangeSlider.js"></script>
+    <script src="engine.js"></script>
+    <script>
+        updateQuestionDisplay();
+    </script>
+</body>
+</html>
